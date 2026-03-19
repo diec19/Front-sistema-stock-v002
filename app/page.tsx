@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Plus, Pencil, Trash2, Package, AlertCircle, Search } from 'lucide-react';
-import { productService } from '../src/services/api';
-import { Product, CreateProductDTO, ProductStats } from '../src/types/product';
+import { Plus, Pencil, Trash2, Package, AlertCircle, Search, ChevronLeft, ChevronRight } from 'lucide-react';
+import { productService } from '@/services/api';
+import { Product, CreateProductDTO, ProductStats, PaginationInfo } from '@/types/product';
 
 // Helper para formatear precio
 const formatPrice = (price: number | string): string => {
@@ -13,6 +13,12 @@ const formatPrice = (price: number | string): string => {
 
 export default function Home() {
   const [products, setProducts] = useState<Product[]>([]);
+  const [pagination, setPagination] = useState<PaginationInfo>({
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 0
+  });
   const [stats, setStats] = useState<ProductStats>({ totalProducts: 0, lowStockCount: 0, totalValue: 0 });
   const [lowStockProducts, setLowStockProducts] = useState<Product[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -30,15 +36,12 @@ export default function Home() {
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [pagination.page]);
 
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
-      if (searchTerm) {
-        searchProducts(searchTerm);
-      } else {
-        loadProducts();
-      }
+      setPagination(prev => ({ ...prev, page: 1 })); // Reset a página 1 al buscar
+      loadProducts(1, searchTerm);
     }, 300);
 
     return () => clearTimeout(delayDebounceFn);
@@ -48,7 +51,7 @@ export default function Home() {
     try {
       setLoading(true);
       await Promise.all([
-        loadProducts(),
+        loadProducts(pagination.page, searchTerm),
         loadStats(),
         loadLowStock()
       ]);
@@ -60,21 +63,13 @@ export default function Home() {
     }
   };
 
-  const loadProducts = async () => {
+  const loadProducts = async (page: number = 1, search: string = '') => {
     try {
-      const data = await productService.getAll();
-      setProducts(data);
+      const response = await productService.getAll(search, page, pagination.limit);
+      setProducts(response.data);
+      setPagination(response.pagination);
     } catch (error) {
       console.error('Error loading products:', error);
-    }
-  };
-
-  const searchProducts = async (search: string) => {
-    try {
-      const data = await productService.getAll(search);
-      setProducts(data);
-    } catch (error) {
-      console.error('Error searching products:', error);
     }
   };
 
@@ -172,7 +167,7 @@ export default function Home() {
                 <Package className="w-8 h-8 text-white" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-white">Control de Stock - Ilucion Creativa</h1>
+                <h1 className="text-3xl font-bold text-white">Control de Stock</h1>
                 <p className="text-slate-400">Gestión de inventario en tiempo real</p>
               </div>
             </div>
@@ -298,6 +293,64 @@ export default function Home() {
               </tbody>
             </table>
           </div>
+
+          {/* Paginación */}
+          {pagination.totalPages > 1 && (
+            <div className="px-6 py-4 border-t border-slate-700 flex items-center justify-between">
+              <div className="text-slate-400 text-sm">
+                Mostrando {((pagination.page - 1) * pagination.limit) + 1} - {Math.min(pagination.page * pagination.limit, pagination.total)} de {pagination.total} productos
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setPagination(prev => ({ ...prev, page: prev.page - 1 }))}
+                  disabled={pagination.page === 1}
+                  className="p-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
+                
+                {/* Números de página */}
+                <div className="flex gap-1">
+                  {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map((pageNum) => {
+                    // Mostrar solo páginas cercanas
+                    if (
+                      pageNum === 1 ||
+                      pageNum === pagination.totalPages ||
+                      (pageNum >= pagination.page - 1 && pageNum <= pagination.page + 1)
+                    ) {
+                      return (
+                        <button
+                          key={pageNum}
+                          onClick={() => setPagination(prev => ({ ...prev, page: pageNum }))}
+                          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                            pagination.page === pageNum
+                              ? 'bg-blue-500 text-white'
+                              : 'bg-slate-700 hover:bg-slate-600 text-slate-300'
+                          }`}
+                        >
+                          {pageNum}
+                        </button>
+                      );
+                    } else if (
+                      pageNum === pagination.page - 2 ||
+                      pageNum === pagination.page + 2
+                    ) {
+                      return <span key={pageNum} className="px-2 text-slate-500">...</span>;
+                    }
+                    return null;
+                  })}
+                </div>
+
+                <button
+                  onClick={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}
+                  disabled={pagination.page === pagination.totalPages}
+                  className="p-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <ChevronRight className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Modal */}
