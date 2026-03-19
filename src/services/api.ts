@@ -1,5 +1,6 @@
 import axios from 'axios';
-import { Product, CreateProductDTO, UpdateProductDTO, ProductStats, PaginatedResponse } from '../types/product';
+import { Product, CreateProductDTO, UpdateProductDTO, ProductStats, PaginatedResponse } from '@/types/product';
+import { CreateSaleDTO, Sale, SaleStats } from '../types/sale';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
@@ -75,6 +76,33 @@ export const importService = {
       },
     });
     return response.data;
+  },
+};
+
+export const salesService = {
+  // Crear venta
+  create: async (data: CreateSaleDTO): Promise<Sale> => {
+    const response = await api.post('/api/sales', data);
+    return response.data;
+  },
+
+  // Obtener todas las ventas
+  getAll: async (page: number = 1, limit: number = 10): Promise<PaginatedResponse<Sale>> => {
+    const response = await api.get('/api/sales', {
+      params: { page, limit }
+    });
+    return response.data;
+  },
+
+  // Obtener estadísticas
+  getStats: async (): Promise<SaleStats> => {
+    const response = await api.get('/api/sales/stats');
+    return response.data;
+  },
+
+  // Eliminar venta
+  delete: async (id: string): Promise<void> => {
+    await api.delete(`/api/sales/${id}`);
   },
 };
 
