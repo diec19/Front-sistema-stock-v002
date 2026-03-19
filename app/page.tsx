@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { Plus, Pencil, Trash2, Package, AlertCircle, Search, ChevronLeft, ChevronRight } from 'lucide-react';
-import { productService } from '@/services/api';
-import { Product, CreateProductDTO, ProductStats, PaginationInfo } from '@/types/product';
+import { productService } from '../src/services/api';
+import { Product, CreateProductDTO, ProductStats, PaginationInfo } from '../src/types/product';
 
 // Helper para formatear precio
 const formatPrice = (price: number | string): string => {
