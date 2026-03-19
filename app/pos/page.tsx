@@ -1,10 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Search, Plus, Minus, Trash2, ShoppingCart, DollarSign, Package, TrendingUp, CheckCircle } from 'lucide-react';
-import { productService, salesService } from '../../src/services/api';
+import { Search, Plus, Minus, Trash2, ShoppingCart, DollarSign, Package, TrendingUp, CheckCircle, LogOut, LogIn, AlertCircle, History, X } from 'lucide-react';
+import { productService, salesService, cashRegisterService } from '../../src/services/api';
 import { Product } from '../../src/types/product';
-import { SaleItem, SaleStats } from '../../src/types/sale';
+import { SaleItem, SaleStats, CashRegister, Sale } from '../../src/types/sale';
 
 export default function POSPage() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -14,6 +14,14 @@ export default function POSPage() {
   const [processing, setProcessing] = useState(false);
   const [stats, setStats] = useState<SaleStats>({ totalSales: 0, totalRevenue: 0, todaySales: 0, todayRevenue: 0 });
   const [showSuccess, setShowSuccess] = useState(false);
+  const [cashRegister, setCashRegister] = useState<CashRegister | null>(null);
+  const [showOpenModal, setShowOpenModal] = useState(false);
+  const [showCloseModal, setShowCloseModal] = useState(false);
+  const [showSalesModal, setShowSalesModal] = useState(false);
+  const [sales, setSales] = useState<Sale[]>([]);
+  const [openingAmount, setOpeningAmount] = useState('');
+  const [closingAmount, setClosingAmount] = useState('');
+  const [cashierName, setCashierName] = useState('');
 
   useEffect(() => {
     loadData();
@@ -36,6 +44,14 @@ export default function POSPage() {
       ]);
       setProducts(productsData.data);
       setStats(statsData);
+      
+      // Intentar cargar caja actual
+      try {
+        const currentCash = await cashRegisterService.getCurrent();
+        setCashRegister(currentCash);
+      } catch (error) {
+        setCashRegister(null);
+      }
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
@@ -52,11 +68,82 @@ export default function POSPage() {
     }
   };
 
+  const openCashRegister = async () => {
+    if (!cashierName || !openingAmount) {
+      alert('Por favor completa todos los campos');
+      return;
+    }
+
+    try {
+      const newCash = await cashRegisterService.open({
+        openingAmount: parseFloat(openingAmount),
+        openedBy: cashierName
+      });
+      setCashRegister(newCash);
+      setShowOpenModal(false);
+      setOpeningAmount('');
+      setCashierName('');
+      await loadData();
+    } catch (error: any) {
+      alert(error.response?.data?.error || 'Error al abrir la caja');
+    }
+  };
+
+  const closeCashRegister = async () => {
+    if (!cashRegister || !closingAmount || !cashierName) {
+      alert('Por favor completa todos los campos');
+      return;
+    }
+
+    try {
+      await cashRegisterService.close(cashRegister.id, {
+        closingAmount: parseFloat(closingAmount),
+        closedBy: cashierName
+      });
+      setCashRegister(null);
+      setShowCloseModal(false);
+      setClosingAmount('');
+      setCashierName('');
+      setSaleItems([]);
+      await loadData();
+    } catch (error: any) {
+      alert(error.response?.data?.error || 'Error al cerrar la caja');
+    }
+  };
+
+  const loadSales = async () => {
+    try {
+      const response = await salesService.getAll(1, 20);
+      setSales(response.data);
+      setShowSalesModal(true);
+    } catch (error) {
+      console.error('Error loading sales:', error);
+    }
+  };
+
+  const deleteSale = async (saleId: string) => {
+    if (!window.confirm('¿Estás seguro de eliminar esta venta? Se devolverá el stock.')) {
+      return;
+    }
+
+    try {
+      await salesService.delete(saleId);
+      await loadSales();
+      await loadData();
+    } catch (error: any) {
+      alert(error.response?.data?.error || 'Error al eliminar la venta');
+    }
+  };
+
   const addToSale = (product: Product) => {
+    if (!cashRegister) {
+      alert('Debes abrir una caja antes de realizar ventas');
+      return;
+    }
+
     const existingItem = saleItems.find(item => item.productId === product.id);
     
     if (existingItem) {
-      // Verificar stock antes de incrementar
       if (existingItem.quantity >= product.stock) {
         alert(`Stock insuficiente. Solo hay ${product.stock} unidades disponibles.`);
         return;
@@ -116,6 +203,11 @@ export default function POSPage() {
       return;
     }
 
+    if (!cashRegister) {
+      alert('Debes abrir una caja antes de realizar ventas');
+      return;
+    }
+
     try {
       setProcessing(true);
       await salesService.create({
@@ -126,11 +218,8 @@ export default function POSPage() {
         }))
       });
 
-      // Mostrar mensaje de éxito
       setShowSuccess(true);
       setTimeout(() => setShowSuccess(false), 3000);
-
-      // Limpiar venta y recargar datos
       setSaleItems([]);
       await loadData();
     } catch (error: any) {
@@ -160,13 +249,61 @@ export default function POSPage() {
       <div className="p-6">
         {/* Header */}
         <div className="mb-6">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="bg-green-500 p-3 rounded-xl">
-              <ShoppingCart className="w-8 h-8 text-white" />
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="bg-green-500 p-3 rounded-xl">
+                <ShoppingCart className="w-8 h-8 text-white" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-white">Punto de Venta</h1>
+                <p className="text-slate-400">Realiza ventas y gestiona transacciones</p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-3xl font-bold text-white">Punto de Venta</h1>
-              <p className="text-slate-400">Realiza ventas y gestiona transacciones</p>
+
+            {/* Cash Register Status & Actions */}
+            <div className="flex items-center gap-3">
+              <button
+                onClick={loadSales}
+                className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold transition-colors"
+              >
+                <History className="w-5 h-5" />
+                Historial
+              </button>
+
+              {cashRegister ? (
+                <>
+                  <div className="bg-green-500/20 border border-green-500 rounded-lg px-4 py-2">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                      <span className="text-green-400 font-semibold">Caja Abierta</span>
+                    </div>
+                    <p className="text-xs text-green-300">Por: {cashRegister.openedBy}</p>
+                  </div>
+                  <button
+                    onClick={() => setShowCloseModal(true)}
+                    className="flex items-center gap-2 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-semibold transition-colors"
+                  >
+                    <LogOut className="w-5 h-5" />
+                    Cerrar Caja
+                  </button>
+                </>
+              ) : (
+                <>
+                  <div className="bg-red-500/20 border border-red-500 rounded-lg px-4 py-2">
+                    <div className="flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4 text-red-400" />
+                      <span className="text-red-400 font-semibold">Caja Cerrada</span>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setShowOpenModal(true)}
+                    className="flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg font-semibold transition-colors"
+                  >
+                    <LogIn className="w-5 h-5" />
+                    Abrir Caja
+                  </button>
+                </>
+              )}
             </div>
           </div>
 
@@ -244,10 +381,10 @@ export default function POSPage() {
                   <button
                     key={product.id}
                     onClick={() => addToSale(product)}
-                    disabled={product.stock === 0}
+                    disabled={product.stock === 0 || !cashRegister}
                     className={`
                       p-4 rounded-lg border text-left transition-all
-                      ${product.stock === 0
+                      ${product.stock === 0 || !cashRegister
                         ? 'bg-slate-800/30 border-slate-700 opacity-50 cursor-not-allowed'
                         : 'bg-slate-800 border-slate-700 hover:border-green-500 hover:bg-slate-700/50 cursor-pointer'
                       }
@@ -338,7 +475,7 @@ export default function POSPage() {
                   <div className="space-y-2">
                     <button
                       onClick={completeSale}
-                      disabled={processing}
+                      disabled={processing || !cashRegister}
                       className="w-full bg-green-500 hover:bg-green-600 text-white py-3 rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                     >
                       {processing ? (
@@ -366,6 +503,206 @@ export default function POSPage() {
           </div>
         </div>
       </div>
+
+      {/* Modal Abrir Caja */}
+      {showOpenModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-slate-800 rounded-2xl max-w-md w-full border border-slate-700 shadow-2xl">
+            <div className="p-6 border-b border-slate-700">
+              <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+                <LogIn className="w-6 h-6 text-green-500" />
+                Abrir Caja
+              </h2>
+            </div>
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-slate-300 text-sm font-medium mb-2">Nombre del Cajero</label>
+                <input
+                  type="text"
+                  value={cashierName}
+                  onChange={(e) => setCashierName(e.target.value)}
+                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-green-500"
+                  placeholder="Ej: Juan Pérez"
+                />
+              </div>
+              <div>
+                <label className="block text-slate-300 text-sm font-medium mb-2">Monto Inicial</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={openingAmount}
+                  onChange={(e) => setOpeningAmount(e.target.value)}
+                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-green-500"
+                  placeholder="0.00"
+                />
+              </div>
+            </div>
+            <div className="p-6 border-t border-slate-700 flex gap-3 justify-end">
+              <button
+                onClick={() => setShowOpenModal(false)}
+                className="px-6 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={openCashRegister}
+                className="px-6 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg font-semibold transition-colors"
+              >
+                Abrir Caja
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Cerrar Caja */}
+      {showCloseModal && cashRegister && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-slate-800 rounded-2xl max-w-md w-full border border-slate-700 shadow-2xl">
+            <div className="p-6 border-b border-slate-700">
+              <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+                <LogOut className="w-6 h-6 text-red-500" />
+                Cerrar Caja
+              </h2>
+            </div>
+            <div className="p-6 space-y-4">
+              <div className="bg-slate-900 rounded-lg p-4 space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Monto Inicial:</span>
+                  <span className="text-white font-semibold">${Number(cashRegister.openingAmount).toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Ventas del Día:</span>
+                  <span className="text-white font-semibold">{cashRegister.stats?.totalSales || 0}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Ingresos:</span>
+                  <span className="text-green-400 font-semibold">${cashRegister.stats?.totalRevenue.toFixed(2) || '0.00'}</span>
+                </div>
+                <div className="flex justify-between border-t border-slate-700 pt-2">
+                  <span className="text-white font-semibold">Monto Esperado:</span>
+                  <span className="text-green-400 font-bold text-lg">${cashRegister.stats?.expectedAmount.toFixed(2) || '0.00'}</span>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-slate-300 text-sm font-medium mb-2">Quien cierra</label>
+                <input
+                  type="text"
+                  value={cashierName}
+                  onChange={(e) => setCashierName(e.target.value)}
+                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-red-500"
+                  placeholder="Ej: Juan Pérez"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-300 text-sm font-medium mb-2">Monto Real en Caja</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={closingAmount}
+                  onChange={(e) => setClosingAmount(e.target.value)}
+                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-red-500"
+                  placeholder="0.00"
+                />
+              </div>
+
+              {closingAmount && cashRegister.stats && (
+                <div className={`rounded-lg p-3 ${
+                  parseFloat(closingAmount) === cashRegister.stats.expectedAmount
+                    ? 'bg-green-500/20 border border-green-500'
+                    : 'bg-yellow-500/20 border border-yellow-500'
+                }`}>
+                  <p className={`text-sm font-medium ${
+                    parseFloat(closingAmount) === cashRegister.stats.expectedAmount
+                      ? 'text-green-400'
+                      : 'text-yellow-400'
+                  }`}>
+                    {parseFloat(closingAmount) === cashRegister.stats.expectedAmount
+                      ? '✓ El arqueo está correcto'
+                      : `Diferencia: $${(parseFloat(closingAmount) - cashRegister.stats.expectedAmount).toFixed(2)}`
+                    }
+                  </p>
+                </div>
+              )}
+            </div>
+            <div className="p-6 border-t border-slate-700 flex gap-3 justify-end">
+              <button
+                onClick={() => setShowCloseModal(false)}
+                className="px-6 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={closeCashRegister}
+                className="px-6 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg font-semibold transition-colors"
+              >
+                Cerrar Caja
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Historial de Ventas */}
+      {showSalesModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-slate-800 rounded-2xl max-w-4xl w-full border border-slate-700 shadow-2xl max-h-[80vh] flex flex-col">
+            <div className="p-6 border-b border-slate-700 flex items-center justify-between">
+              <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+                <History className="w-6 h-6 text-blue-500" />
+                Historial de Ventas
+              </h2>
+              <button
+                onClick={() => setShowSalesModal(false)}
+                className="text-slate-400 hover:text-white transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            <div className="p-6 overflow-y-auto flex-1">
+              {sales.length === 0 ? (
+                <div className="text-center py-12">
+                  <History className="w-16 h-16 text-slate-600 mx-auto mb-3" />
+                  <p className="text-slate-400">No hay ventas registradas</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {sales.map((sale) => (
+                    <div key={sale.id} className="bg-slate-900 rounded-lg p-4">
+                      <div className="flex items-start justify-between mb-3">
+                        <div>
+                          <p className="text-white font-semibold">Venta #{sale.id.slice(0, 8)}</p>
+                          <p className="text-slate-400 text-sm">{new Date(sale.createdAt).toLocaleString()}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-green-400 font-bold text-lg">${Number(sale.total).toFixed(2)}</p>
+                          <button
+                            onClick={() => deleteSale(sale.id)}
+                            className="text-red-400 hover:text-red-300 text-sm flex items-center gap-1 mt-1"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                            Eliminar
+                          </button>
+                        </div>
+                      </div>
+                      <div className="border-t border-slate-700 pt-2 space-y-1">
+                        {sale.items.map((item) => (
+                          <div key={item.id} className="flex justify-between text-sm">
+                            <span className="text-slate-300">{item.product.name} x{item.quantity}</span>
+                            <span className="text-slate-400">${Number(item.subtotal).toFixed(2)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Success Message */}
       {showSuccess && (

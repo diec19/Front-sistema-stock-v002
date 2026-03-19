@@ -39,3 +39,30 @@ export interface SaleStats {
   todaySales: number;
   todayRevenue: number;
 }
+
+export interface CashRegister {
+  id: string;
+  openingAmount: number;
+  closingAmount?: number;
+  status: string;
+  openedBy: string;
+  closedBy?: string;
+  openedAt: string;
+  closedAt?: string;
+  sales?: Sale[];
+  stats?: {
+    totalSales: number;
+    totalRevenue: number;
+    expectedAmount: number;
+  };
+}
+
+export interface OpenCashRegisterDTO {
+  openingAmount: number;
+  openedBy: string;
+}
+
+export interface CloseCashRegisterDTO {
+  closingAmount: number;
+  closedBy: string;
+}

@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { Product, CreateProductDTO, UpdateProductDTO, ProductStats, PaginatedResponse } from '../types/product';
-import { CreateSaleDTO, Sale, SaleStats } from '../types/sale';
+import { CreateSaleDTO, Sale, SaleStats, CashRegister, OpenCashRegisterDTO, CloseCashRegisterDTO } from '../types/sale';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
@@ -103,6 +103,34 @@ export const salesService = {
   // Eliminar venta
   delete: async (id: string): Promise<void> => {
     await api.delete(`/api/sales/${id}`);
+  },
+};
+
+export const cashRegisterService = {
+  // Abrir caja
+  open: async (data: OpenCashRegisterDTO): Promise<CashRegister> => {
+    const response = await api.post('/api/cash-register/open', data);
+    return response.data;
+  },
+
+  // Cerrar caja
+  close: async (id: string, data: CloseCashRegisterDTO): Promise<CashRegister> => {
+    const response = await api.post(`/api/cash-register/${id}/close`, data);
+    return response.data;
+  },
+
+  // Obtener caja actual
+  getCurrent: async (): Promise<CashRegister> => {
+    const response = await api.get('/api/cash-register/current');
+    return response.data;
+  },
+
+  // Obtener todas las cajas
+  getAll: async (page: number = 1, limit: number = 10): Promise<PaginatedResponse<CashRegister>> => {
+    const response = await api.get('/api/cash-register', {
+      params: { page, limit }
+    });
+    return response.data;
   },
 };
 
