@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Plus, Pencil, Trash2, Package, AlertCircle, Search, ChevronLeft, ChevronRight } from 'lucide-react';
-import { productService } from '../src/services/api';
+import { useState, useEffect, useRef } from 'react';
+import { Plus, Pencil, Trash2, Package, AlertCircle, Search, ChevronLeft, ChevronRight, Upload, Download, FileSpreadsheet, X, CheckCircle, XCircle } from 'lucide-react';
+import { productService, importService } from '../src/services/api';
 import { Product, CreateProductDTO, ProductStats, PaginationInfo } from '../src/types/product';
 
 // Helper para formatear precio
@@ -22,9 +22,14 @@ export default function Home() {
   const [stats, setStats] = useState<ProductStats>({ totalProducts: 0, lowStockCount: 0, totalValue: 0 });
   const [lowStockProducts, setLowStockProducts] = useState<Product[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [importLoading, setImportLoading] = useState(false);
+  const [importResult, setImportResult] = useState<any>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState<CreateProductDTO>({
     name: '',
     description: '',
@@ -148,6 +153,62 @@ export default function Home() {
     setEditingProduct(null);
   };
 
+  const handleDownloadTemplate = async () => {
+    try {
+      const blob = await importService.downloadTemplate();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'plantilla_productos.xlsx';
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error('Error downloading template:', error);
+      alert('Error al descargar la plantilla');
+    }
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setSelectedFile(e.target.files[0]);
+      setImportResult(null);
+    }
+  };
+
+  const handleImport = async () => {
+    if (!selectedFile) {
+      alert('Por favor selecciona un archivo');
+      return;
+    }
+
+    try {
+      setImportLoading(true);
+      const result = await importService.importProducts(selectedFile);
+      setImportResult(result);
+      
+      // Si hay productos exitosos, recargar la lista
+      if (result.results.success > 0) {
+        await loadData();
+      }
+    } catch (error: any) {
+      console.error('Error importing products:', error);
+      alert(error.response?.data?.error || 'Error al importar productos');
+    } finally {
+      setImportLoading(false);
+    }
+  };
+
+  const closeImportModal = () => {
+    setIsImportModalOpen(false);
+    setSelectedFile(null);
+    setImportResult(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
@@ -171,13 +232,22 @@ export default function Home() {
                 <p className="text-slate-400">Gestión de inventario en tiempo real</p>
               </div>
             </div>
-            <button
-              onClick={() => openModal()}
-              className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-xl font-semibold transition-all shadow-lg hover:shadow-blue-500/50"
-            >
-              <Plus className="w-5 h-5" />
-              Nuevo Producto
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setIsImportModalOpen(true)}
+                className="flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-xl font-semibold transition-all shadow-lg hover:shadow-green-500/50"
+              >
+                <Upload className="w-5 h-5" />
+                Importar Excel
+              </button>
+              <button
+                onClick={() => openModal()}
+                className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-xl font-semibold transition-all shadow-lg hover:shadow-blue-500/50"
+              >
+                <Plus className="w-5 h-5" />
+                Nuevo Producto
+              </button>
+            </div>
           </div>
 
           {/* Stats */}
@@ -447,6 +517,151 @@ export default function Home() {
           </div>
         )}
       </div>
+
+      {/* Modal de Importación */}
+      {isImportModalOpen && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-slate-800 rounded-2xl max-w-3xl w-full border border-slate-700 shadow-2xl">
+            <div className="p-6 border-b border-slate-700 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="bg-green-500 p-2 rounded-lg">
+                  <FileSpreadsheet className="w-6 h-6 text-white" />
+                </div>
+                <h2 className="text-2xl font-bold text-white">Importar Productos desde Excel</h2>
+              </div>
+              <button
+                onClick={closeImportModal}
+                className="text-slate-400 hover:text-white transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-6">
+              {/* Instrucciones */}
+              <div className="bg-blue-500/10 border border-blue-500/50 rounded-xl p-4">
+                <h3 className="text-blue-400 font-semibold mb-2">📋 Instrucciones:</h3>
+                <ol className="text-slate-300 text-sm space-y-1 list-decimal list-inside">
+                  <li>Descarga la plantilla Excel</li>
+                  <li>Completa los datos de los productos (nombre, descripción, sku, precio, stock, stock_minimo)</li>
+                  <li>Guarda el archivo y súbelo aquí</li>
+                </ol>
+              </div>
+
+              {/* Botón descargar plantilla */}
+              <div>
+                <button
+                  onClick={handleDownloadTemplate}
+                  className="w-full flex items-center justify-center gap-2 bg-slate-700 hover:bg-slate-600 text-white px-6 py-3 rounded-xl font-semibold transition-colors"
+                >
+                  <Download className="w-5 h-5" />
+                  Descargar Plantilla Excel
+                </button>
+              </div>
+
+              {/* Área de carga de archivo */}
+              <div className="border-2 border-dashed border-slate-600 rounded-xl p-8 text-center">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".xlsx,.xls"
+                  onChange={handleFileSelect}
+                  className="hidden"
+                  id="file-upload"
+                />
+                <label
+                  htmlFor="file-upload"
+                  className="cursor-pointer flex flex-col items-center gap-3"
+                >
+                  <div className="bg-slate-700 p-4 rounded-full">
+                    <Upload className="w-8 h-8 text-slate-300" />
+                  </div>
+                  <div>
+                    <p className="text-white font-medium mb-1">
+                      {selectedFile ? selectedFile.name : 'Click para seleccionar archivo'}
+                    </p>
+                    <p className="text-slate-400 text-sm">
+                      o arrastra y suelta tu archivo Excel aquí
+                    </p>
+                  </div>
+                </label>
+              </div>
+
+              {/* Resultado de la importación */}
+              {importResult && (
+                <div className="space-y-4">
+                  <div className="bg-slate-700/50 rounded-xl p-4">
+                    <h3 className="text-white font-semibold mb-3">Resultado de la Importación</h3>
+                    <div className="grid grid-cols-3 gap-4 mb-4">
+                      <div className="bg-blue-500/20 rounded-lg p-3">
+                        <div className="text-blue-400 text-sm">Total</div>
+                        <div className="text-2xl font-bold text-white">{importResult.results.total}</div>
+                      </div>
+                      <div className="bg-green-500/20 rounded-lg p-3">
+                        <div className="text-green-400 text-sm flex items-center gap-1">
+                          <CheckCircle className="w-4 h-4" />
+                          Exitosos
+                        </div>
+                        <div className="text-2xl font-bold text-white">{importResult.results.success}</div>
+                      </div>
+                      <div className="bg-red-500/20 rounded-lg p-3">
+                        <div className="text-red-400 text-sm flex items-center gap-1">
+                          <XCircle className="w-4 h-4" />
+                          Errores
+                        </div>
+                        <div className="text-2xl font-bold text-white">{importResult.results.errors}</div>
+                      </div>
+                    </div>
+
+                    {/* Lista de errores */}
+                    {importResult.results.errorDetails.length > 0 && (
+                      <div className="mt-4">
+                        <h4 className="text-red-400 font-medium mb-2">Errores encontrados:</h4>
+                        <div className="bg-slate-900 rounded-lg p-3 max-h-60 overflow-y-auto">
+                          {importResult.results.errorDetails.map((error: any, index: number) => (
+                            <div key={index} className="text-sm text-slate-300 mb-2 pb-2 border-b border-slate-700 last:border-0">
+                              <span className="text-red-400 font-medium">Fila {error.row}:</span> {error.error}
+                              <div className="text-slate-500 text-xs mt-1">
+                                SKU: {error.data.sku} - {error.data.nombre}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="p-6 border-t border-slate-700 flex gap-3 justify-end">
+              <button
+                onClick={closeImportModal}
+                className="px-6 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors"
+              >
+                Cerrar
+              </button>
+              <button
+                onClick={handleImport}
+                disabled={!selectedFile || importLoading}
+                className="px-6 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                {importLoading ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Importando...
+                  </>
+                ) : (
+                  <>
+                    <Upload className="w-5 h-5" />
+                    Importar Productos
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -55,4 +55,27 @@ export const productService = {
   },
 };
 
+export const importService = {
+  // Descargar plantilla Excel
+  downloadTemplate: async (): Promise<Blob> => {
+    const response = await api.get('/api/import/template', {
+      responseType: 'blob'
+    });
+    return response.data;
+  },
+
+  // Importar productos desde Excel
+  importProducts: async (file: File): Promise<any> => {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await api.post('/api/import/products', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  },
+};
+
 export default api;
