@@ -172,7 +172,7 @@ export default function Home() {
                 <Package className="w-8 h-8 text-white" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-white">Control de Stock</h1>
+                <h1 className="text-3xl font-bold text-white">Control de Stock - Ilucion Creativa</h1>
                 <p className="text-slate-400">Gestión de inventario en tiempo real</p>
               </div>
             </div>
