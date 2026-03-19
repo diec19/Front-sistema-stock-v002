@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { Product, CreateProductDTO, UpdateProductDTO, ProductStats, PaginatedResponse } from '@/types/product';
+import { Product, CreateProductDTO, UpdateProductDTO, ProductStats, PaginatedResponse } from '../types/product';
 import { CreateSaleDTO, Sale, SaleStats } from '../types/sale';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
