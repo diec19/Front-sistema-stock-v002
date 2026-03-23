@@ -1,8 +1,9 @@
 'use client';
 
-import { Package, ShoppingCart, Users, BarChart3 } from 'lucide-react';
+import { Package, ShoppingCart, Users, BarChart3, LogOut } from 'lucide-react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import { useAuth } from '../context/AuthContext';
 
 const menuItems = [
   {
@@ -35,6 +36,13 @@ const menuItems = [
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const { user, logout } = useAuth();
+
+  const handleLogout = () => {
+    logout();
+    router.push('/login');
+  };
 
   return (
     <div className="w-64 bg-slate-900 border-r border-slate-800 flex flex-col">
@@ -50,6 +58,16 @@ export default function Sidebar() {
           </div>
         </div>
       </div>
+
+      {/* User Info */}
+      {user && (
+        <div className="p-4 border-b border-slate-800">
+          <div className="bg-slate-800/50 rounded-lg p-3">
+            <p className="text-white font-medium text-sm">{user.name}</p>
+            <p className="text-slate-400 text-xs capitalize">{user.role}</p>
+          </div>
+        </div>
+      )}
 
       {/* Menu Items */}
       <nav className="flex-1 p-4 space-y-2">
@@ -85,6 +103,17 @@ export default function Sidebar() {
           );
         })}
       </nav>
+
+      {/* Logout */}
+      <div className="p-4 border-t border-slate-800">
+        <button
+          onClick={handleLogout}
+          className="w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-red-400 hover:bg-red-500/10 transition-all"
+        >
+          <LogOut className="w-5 h-5" />
+          <span>Cerrar Sesión</span>
+        </button>
+      </div>
 
       {/* Footer */}
       <div className="p-4 border-t border-slate-800">

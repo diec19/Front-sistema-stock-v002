@@ -22,6 +22,36 @@ export default function POSPage() {
   const [openingAmount, setOpeningAmount] = useState('');
   const [closingAmount, setClosingAmount] = useState('');
   const [cashierName, setCashierName] = useState('');
+  // Agregar estos estados
+const [showAuthModal, setShowAuthModal] = useState(false);
+const [authUsername, setAuthUsername] = useState('');
+const [authPassword, setAuthPassword] = useState('');
+
+// Función para verificar credenciales antes de mostrar historial
+const handleShowHistory = async () => {
+  setShowAuthModal(true);
+};
+
+const verifyAndShowHistory = async () => {
+  try {
+    const response = await axios.post(`${API_URL}/api/auth/login`, {
+      username: authUsername,
+      password: authPassword
+    });
+    
+    if (response.data.user.role === 'admin') {
+      await loadSales();
+      setShowAuthModal(false);
+      setAuthUsername('');
+      setAuthPassword('');
+    } else {
+      alert('Solo administradores pueden ver el historial');
+    }
+  } catch (error) {
+    alert('Credenciales incorrectas');
+  }
+};
+
 
   useEffect(() => {
     loadData();
@@ -262,8 +292,8 @@ export default function POSPage() {
 
             {/* Cash Register Status & Actions */}
             <div className="flex items-center gap-3">
-              <button
-                onClick={loadSales}
+             <button
+                onClick={handleShowHistory}
                 className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold transition-colors"
               >
                 <History className="w-5 h-5" />
