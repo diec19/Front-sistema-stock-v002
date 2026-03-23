@@ -6,6 +6,7 @@ import { Search, Plus, Minus, Trash2, ShoppingCart, DollarSign, Package, Trendin
 import { productService, salesService, cashRegisterService } from '../../src/services/api';
 import { Product } from '../../src/types/product';
 import { SaleItem, SaleStats, CashRegister, Sale } from '../../src/types/sale';
+import api from '../../src/services/api';
 
 export default function POSPage() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -35,10 +36,10 @@ const handleShowHistory = async () => {
 
 const verifyAndShowHistory = async () => {
   try {
-    const response = await axios.post(`${API_URL}/api/auth/login`, {
-      username: authUsername,
-      password: authPassword
-    });
+   const response = await api.post('/api/auth/login', {
+  username: authUsername,
+  password: authPassword
+}); 
     
     if (response.data.user.role === 'admin') {
       await loadSales();
