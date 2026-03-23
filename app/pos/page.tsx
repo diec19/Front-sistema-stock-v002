@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import axios from 'axios';
 import { Search, Plus, Minus, Trash2, ShoppingCart, DollarSign, Package, TrendingUp, CheckCircle, LogOut, LogIn, AlertCircle, History, X } from 'lucide-react';
 import { productService, salesService, cashRegisterService } from '../../src/services/api';
 import { Product } from '../../src/types/product';
