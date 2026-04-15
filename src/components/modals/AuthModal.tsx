@@ -8,10 +8,12 @@ interface Props {
   onChangePassword: (v: string) => void;
   onConfirm: () => void;
   onClose: () => void;
+   title?: string;
+  message?: string;
 }
 
 export default function AuthModal({
-  username, password, onChangeUsername, onChangePassword, onConfirm, onClose,
+  username, password, onChangeUsername, onChangePassword, onConfirm, onClose,title,message
 }: Props) {
   return (
     <Modal

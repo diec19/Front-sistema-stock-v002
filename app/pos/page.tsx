@@ -34,6 +34,7 @@ export default function POSPage() {
   const [showCloseModal, setShowCloseModal] = useState(false);
   const [showSalesModal, setShowSalesModal] = useState(false);
   const [showAuthModal,  setShowAuthModal]  = useState(false);
+  const [showOpenAuthModal, setShowOpenAuthModal] = useState(false); // Nuevo: para autenticación antes de abrir caja
 
   // ── Form state ────────────────────────────────────────────
   const [openingAmount, setOpeningAmount] = useState('');
@@ -97,8 +98,33 @@ export default function POSPage() {
   };
 
   // ── Cash register ─────────────────────────────────────────
+  // Nueva función: verifica autenticación antes de abrir caja
+  const verifyAndOpenCash = async () => {
+    try {
+      const res = await api.post('/api/auth/login', { username: authUsername, password: authPassword });
+      if (res.data.user.role === 'admin') {
+        // Si es admin, cerrar modal de auth y abrir modal de caja
+        setShowOpenAuthModal(false);
+        setAuthUsername('');
+        setAuthPassword('');
+        setShowOpenModal(true);
+      } else {
+        alert('Solo administradores pueden abrir la caja');
+        setShowOpenAuthModal(false);
+        setAuthUsername('');
+        setAuthPassword('');
+      }
+    } catch { 
+      alert('Credenciales incorrectas'); 
+    }
+  };
+
+  // Función original para abrir caja (ya autenticado)
   const openCashRegister = async () => {
-    if (!cashierName || !openingAmount) { alert('Completá todos los campos'); return; }
+    if (!cashierName || !openingAmount) { 
+      alert('Completá todos los campos'); 
+      return; 
+    }
     try {
       setCashRegister(await cashRegisterService.open({
         openingAmount: parseFloat(openingAmount),
@@ -108,11 +134,16 @@ export default function POSPage() {
       setOpeningAmount('');
       setCashierName('');
       await loadData();
-    } catch (e: any) { alert(e.response?.data?.error || 'Error al abrir la caja'); }
+    } catch (e: any) { 
+      alert(e.response?.data?.error || 'Error al abrir la caja'); 
+    }
   };
 
   const closeCashRegister = async () => {
-    if (!cashRegister || !closingAmount || !cashierName) { alert('Completá todos los campos'); return; }
+    if (!cashRegister || !closingAmount || !cashierName) { 
+      alert('Completá todos los campos'); 
+      return; 
+    }
     try {
       await cashRegisterService.close(cashRegister.id, {
         closingAmount: parseFloat(closingAmount),
@@ -124,7 +155,14 @@ export default function POSPage() {
       setCashierName('');
       setSaleItems([]);
       await loadData();
-    } catch (e: any) { alert(e.response?.data?.error || 'Error al cerrar la caja'); }
+    } catch (e: any) { 
+      alert(e.response?.data?.error || 'Error al cerrar la caja'); 
+    }
+  };
+
+  // Manejador para el botón "Abrir caja"
+  const handleOpenCashClick = () => {
+    setShowOpenAuthModal(true);
   };
 
   // ── Cart ──────────────────────────────────────────────────
@@ -204,7 +242,7 @@ export default function POSPage() {
 
       <POSTopbar
         cashRegister={cashRegister}
-        onOpenCash={() => setShowOpenModal(true)}
+        onOpenCash={handleOpenCashClick}  
         onCloseCash={() => setShowCloseModal(true)}
         onHistory={() => setShowAuthModal(true)}
       />
@@ -232,7 +270,25 @@ export default function POSPage() {
         />
       </div>
 
-      {/* Modals */}
+      {/* Modal de autenticación para abrir caja */}
+      {showOpenAuthModal && (
+        <AuthModal
+          username={authUsername}
+          password={authPassword}
+          onChangeUsername={setAuthUsername}
+          onChangePassword={setAuthPassword}
+          onConfirm={verifyAndOpenCash}
+          onClose={() => { 
+            setShowOpenAuthModal(false); 
+            setAuthUsername(''); 
+            setAuthPassword(''); 
+          }}
+          title="Autenticación requerida"
+          message="Solo administradores pueden abrir la caja"
+        />
+      )}
+
+      {/* Modal de autenticación para historial */}
       {showAuthModal && (
         <AuthModal
           username={authUsername}
@@ -240,10 +296,17 @@ export default function POSPage() {
           onChangeUsername={setAuthUsername}
           onChangePassword={setAuthPassword}
           onConfirm={verifyAndShowHistory}
-          onClose={() => { setShowAuthModal(false); setAuthUsername(''); setAuthPassword(''); }}
+          onClose={() => { 
+            setShowAuthModal(false); 
+            setAuthUsername(''); 
+            setAuthPassword(''); 
+          }}
+          title="Autenticación requerida"
+          message="Solo administradores pueden ver el historial"
         />
       )}
 
+      {/* Modal de apertura de caja */}
       {showOpenModal && (
         <OpenCashModal
           cashierName={cashierName}
@@ -251,10 +314,15 @@ export default function POSPage() {
           onChangeCashier={setCashierName}
           onChangeAmount={setOpeningAmount}
           onConfirm={openCashRegister}
-          onClose={() => { setShowOpenModal(false); setCashierName(''); setOpeningAmount(''); }}
+          onClose={() => { 
+            setShowOpenModal(false); 
+            setCashierName(''); 
+            setOpeningAmount(''); 
+          }}
         />
       )}
 
+      {/* Modal de cierre de caja */}
       {showCloseModal && cashRegister && (
         <CloseCashModal
           cashRegister={cashRegister}
@@ -263,10 +331,15 @@ export default function POSPage() {
           onChangeCashier={setCashierName}
           onChangeAmount={setClosingAmount}
           onConfirm={closeCashRegister}
-          onClose={() => { setShowCloseModal(false); setCashierName(''); setClosingAmount(''); }}
+          onClose={() => { 
+            setShowCloseModal(false); 
+            setCashierName(''); 
+            setClosingAmount(''); 
+          }}
         />
       )}
 
+      {/* Modal de historial de ventas */}
       {showSalesModal && (
         <SalesHistoryModal
           sales={sales}
