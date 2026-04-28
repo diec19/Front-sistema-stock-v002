@@ -182,6 +182,10 @@ export const reportService = {
     const response = await api.get('/api/reports/expenses', { params: { days, page, limit } });
     return response.data;
   },
+  getSalesByCategory: async (days: number) => {
+    const response = await api.get('/api/reports/sales-by-category', { params: { days } });
+    return response.data;
+  },
 };
 
 export const userService = {

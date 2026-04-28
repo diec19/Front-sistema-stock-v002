@@ -3,7 +3,9 @@ export interface Product {
   name: string;
   description: string;
   sku: string;
-  price: number | string; // Puede venir como string desde Prisma
+  price: number | string;
+  costPrice: number | string;
+  category: string;
   stock: number;
   minStock: number;
   createdAt: string;
@@ -15,6 +17,8 @@ export interface CreateProductDTO {
   description: string;
   sku: string;
   price: number;
+  costPrice: number;
+  category: string;
   stock: number;
   minStock: number;
 }
@@ -24,6 +28,8 @@ export interface UpdateProductDTO {
   description?: string;
   sku?: string;
   price?: number;
+  costPrice?: number;
+  category?: string;
   stock?: number;
   minStock?: number;
 }
@@ -32,6 +38,7 @@ export interface ProductStats {
   totalProducts: number;
   lowStockCount: number;
   totalValue: number;
+  totalCostValue: number;
 }
 
 export interface PaginationInfo {

@@ -9,12 +9,13 @@ import { reportService } from '../../src/services/api';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-interface Summary     { totalSales: number; totalRevenue: number; totalExpenses: number; netBalance: number; }
-interface TopProduct  { productId: string; productName: string; sku: string; totalQuantity: number; totalRevenue: number; }
-interface SalesByDay  { date: string; total: number; count: number; }
-interface SalesByHour { hour: number; label: string; total: number; count: number; }
-interface CashReg     { id: string; status: string; openedBy: string; closedBy?: string; openedAt: string; closedAt?: string; openingAmount: number; closingAmount?: number; totalSales: number; totalRevenue: number; totalExpenses: number; expectedAmount: number; }
-interface ExpenseItem { id: string; description: string; createdBy: string; amount: number; createdAt: string; cashRegister: { openedBy: string; openedAt: string }; }
+interface Summary      { totalSales: number; totalRevenue: number; totalExpenses: number; netBalance: number; }
+interface TopProduct   { productId: string; productName: string; sku: string; category: string; totalQuantity: number; totalRevenue: number; totalCost: number; grossProfit: number; }
+interface SalesByDay   { date: string; total: number; count: number; }
+interface SalesByHour  { hour: number; label: string; total: number; count: number; }
+interface CashReg      { id: string; status: string; openedBy: string; closedBy?: string; openedAt: string; closedAt?: string; openingAmount: number; closingAmount?: number; totalSales: number; totalRevenue: number; totalExpenses: number; expectedAmount: number; }
+interface ExpenseItem  { id: string; description: string; createdBy: string; amount: number; createdAt: string; cashRegister: { openedBy: string; openedAt: string }; }
+interface CategorySale { category: string; totalQuantity: number; totalRevenue: number; totalCost: number; grossProfit: number; margin: number; }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -131,26 +132,92 @@ function TopProductsList({ data }: { data: TopProduct[] }) {
 
   return (
     <div className="flex flex-col gap-3.5">
-      {data.map((p, i) => (
-        <div key={p.productId} className="flex items-center gap-3">
-          <span className="text-xs font-bold text-gray-400 w-4 shrink-0 text-right">{i + 1}</span>
-          <div className="flex-1 min-w-0">
-            <div className="flex justify-between mb-1">
-              <span className="text-sm text-gray-900 font-medium truncate pr-2">{p.productName}</span>
-              <span className="text-xs text-gray-500 shrink-0">{p.totalQuantity} un.</span>
+      {data.map((p, i) => {
+        const margin = p.totalRevenue > 0 ? Math.round((p.grossProfit / p.totalRevenue) * 100) : 0;
+        return (
+          <div key={p.productId} className="flex items-center gap-3">
+            <span className="text-xs font-bold text-gray-400 w-4 shrink-0 text-right">{i + 1}</span>
+            <div className="flex-1 min-w-0">
+              <div className="flex justify-between mb-0.5">
+                <span className="text-sm text-gray-900 font-medium truncate pr-2">{p.productName}</span>
+                <span className="text-xs text-gray-500 shrink-0">{p.totalQuantity} un.</span>
+              </div>
+              {p.category && (
+                <span className="text-[10px] text-gray-400">{p.category}</span>
+              )}
+              <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden mt-1">
+                <div
+                  className="h-full bg-sky-500 rounded-full"
+                  style={{ width: `${(p.totalQuantity / maxQty) * 100}%` }}
+                />
+              </div>
             </div>
-            <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-sky-500 rounded-full"
-                style={{ width: `${(p.totalQuantity / maxQty) * 100}%` }}
-              />
+            <div className="shrink-0 text-right">
+              <div className="text-xs text-emerald-600 tabular-nums font-semibold">{fmt(p.totalRevenue)}</div>
+              <div className={`text-[10px] tabular-nums font-medium ${margin >= 30 ? 'text-violet-500' : margin >= 10 ? 'text-amber-500' : 'text-red-400'}`}>
+                {margin}% mg
+              </div>
             </div>
           </div>
-          <span className="text-xs text-emerald-600 tabular-nums font-semibold shrink-0 w-20 text-right">
-            {fmt(p.totalRevenue)}
-          </span>
-        </div>
-      ))}
+        );
+      })}
+    </div>
+  );
+}
+
+// ── Category Sales ────────────────────────────────────────────────────────────
+
+function CategorySalesList({ data }: { data: CategorySale[] }) {
+  const maxRevenue = Math.max(...data.map(c => c.totalRevenue), 1);
+
+  if (data.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-10 text-gray-400 gap-2">
+        <Package size={28} strokeWidth={1.2} />
+        <p className="text-sm">Sin datos de categorías</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="border-b border-gray-200">
+            {['Categoría', 'Unidades', 'Ingresos', 'Costo', 'Ganancia', 'Margen'].map(h => (
+              <th key={h} className="text-left text-[11px] text-gray-500 font-semibold uppercase tracking-wide pb-3 pr-4">{h}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-gray-100">
+          {data.map(c => (
+            <tr key={c.category} className="hover:bg-gray-50 transition-colors">
+              <td className="py-3 pr-4">
+                <div className="flex items-center gap-2">
+                  <div
+                    className="h-1.5 rounded-full bg-sky-400 shrink-0"
+                    style={{ width: `${Math.max((c.totalRevenue / maxRevenue) * 60, 4)}px` }}
+                  />
+                  <span className="text-gray-900 font-medium">{c.category || 'Sin categoría'}</span>
+                </div>
+              </td>
+              <td className="py-3 pr-4 text-gray-600 tabular-nums">{c.totalQuantity}</td>
+              <td className="py-3 pr-4 text-emerald-600 font-semibold tabular-nums">{fmt(c.totalRevenue)}</td>
+              <td className="py-3 pr-4 text-orange-500 tabular-nums">{fmt(c.totalCost)}</td>
+              <td className="py-3 pr-4 text-violet-600 font-semibold tabular-nums">{fmt(c.grossProfit)}</td>
+              <td className="py-3">
+                <span className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${
+                  c.margin >= 30 ? 'bg-emerald-100 text-emerald-700' :
+                  c.margin >= 10 ? 'bg-amber-100 text-amber-700' :
+                  'bg-red-100 text-red-600'
+                }`}>
+                  {c.margin}%
+                </span>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }
@@ -202,17 +269,18 @@ function LiveIndicator({ countdown }: { countdown: number }) {
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export default function ReportesPage() {
-  const [period,      setPeriod]      = useState(1);
-  const [summary,     setSummary]     = useState<Summary | null>(null);
-  const [topProducts, setTopProducts] = useState<TopProduct[]>([]);
-  const [salesByDay,  setSalesByDay]  = useState<SalesByDay[]>([]);
-  const [salesByHour, setSalesByHour] = useState<SalesByHour[]>([]);
-  const [cashRegs,    setCashRegs]    = useState<CashReg[]>([]);
-  const [expenses,    setExpenses]    = useState<ExpenseItem[]>([]);
-  const [loading,     setLoading]     = useState(true);
-  const [refreshing,  setRefreshing]  = useState(false);
-  const [error,       setError]       = useState('');
-  const [countdown,   setCountdown]   = useState(REFRESH_INTERVAL);
+  const [period,         setPeriod]         = useState(1);
+  const [summary,        setSummary]        = useState<Summary | null>(null);
+  const [topProducts,    setTopProducts]    = useState<TopProduct[]>([]);
+  const [salesByDay,     setSalesByDay]     = useState<SalesByDay[]>([]);
+  const [salesByHour,    setSalesByHour]    = useState<SalesByHour[]>([]);
+  const [cashRegs,       setCashRegs]       = useState<CashReg[]>([]);
+  const [expenses,       setExpenses]       = useState<ExpenseItem[]>([]);
+  const [categorySales,  setCategorySales]  = useState<CategorySale[]>([]);
+  const [loading,        setLoading]        = useState(true);
+  const [refreshing,     setRefreshing]     = useState(false);
+  const [error,          setError]          = useState('');
+  const [countdown,      setCountdown]      = useState(REFRESH_INTERVAL);
 
   const periodRef = useRef(period);
   periodRef.current = period;
@@ -223,13 +291,14 @@ export default function ReportesPage() {
     setError('');
     try {
       const p = periodRef.current;
-      const [s, tp, sbd, sbh, cr, exp] = await Promise.all([
+      const [s, tp, sbd, sbh, cr, exp, cs] = await Promise.all([
         reportService.getSummary(p),
         reportService.getTopProducts(p),
         reportService.getSalesByDay(p),
         reportService.getSalesByHour(),
         reportService.getCashRegisters(),
         reportService.getExpenses(p),
+        reportService.getSalesByCategory(p),
       ]);
       setSummary(s);
       setTopProducts(tp);
@@ -237,6 +306,7 @@ export default function ReportesPage() {
       setSalesByHour(sbh);
       setCashRegs(cr);
       setExpenses(exp.data);
+      setCategorySales(cs);
     } catch {
       setError('No se pudieron cargar los reportes.');
     } finally {
@@ -396,6 +466,11 @@ export default function ReportesPage() {
           <TopProductsList data={topProducts} />
         </Section>
       </div>
+
+      {/* ── Ventas por categoría ── */}
+      <Section title="Ventas por categoría" subtitle="Ingresos, costo y margen agrupados por categoría">
+        <CategorySalesList data={categorySales} />
+      </Section>
 
       {/* ── Hoy: tabla de ventas por hora ── */}
       {isToday && (
