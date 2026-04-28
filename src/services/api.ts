@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { Product, CreateProductDTO, UpdateProductDTO, ProductStats, PaginatedResponse } from '../types/product';
-import { CreateSaleDTO, Sale, SaleStats, CashRegister, OpenCashRegisterDTO, CloseCashRegisterDTO } from '../types/sale';
+import { CreateSaleDTO, Sale, SaleStats, CashRegister, OpenCashRegisterDTO, CloseCashRegisterDTO, Expense, CreateExpenseDTO } from '../types/sale';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
@@ -110,10 +110,10 @@ export const salesService = {
   },
 
   // Obtener todas las ventas
-  getAll: async (page: number = 1, limit: number = 10): Promise<PaginatedResponse<Sale>> => {
-    const response = await api.get('/api/sales', {
-      params: { page, limit }
-    });
+  getAll: async (page: number = 1, limit: number = 50, cashRegisterId?: string): Promise<PaginatedResponse<Sale>> => {
+    const params: any = { page, limit };
+    if (cashRegisterId) params.cashRegisterId = cashRegisterId;
+    const response = await api.get('/api/sales', { params });
     return response.data;
   },
 
@@ -154,6 +154,72 @@ export const cashRegisterService = {
       params: { page, limit }
     });
     return response.data;
+  },
+};
+
+export const reportService = {
+  getSummary: async (days: number) => {
+    const response = await api.get('/api/reports/summary', { params: { days } });
+    return response.data;
+  },
+  getTopProducts: async (days: number, limit = 10) => {
+    const response = await api.get('/api/reports/top-products', { params: { days, limit } });
+    return response.data;
+  },
+  getSalesByDay: async (days: number) => {
+    const response = await api.get('/api/reports/sales-by-day', { params: { days } });
+    return response.data;
+  },
+  getSalesByHour: async () => {
+    const response = await api.get('/api/reports/sales-by-hour');
+    return response.data;
+  },
+  getCashRegisters: async () => {
+    const response = await api.get('/api/reports/cash-registers');
+    return response.data;
+  },
+  getExpenses: async (days: number, page = 1, limit = 20) => {
+    const response = await api.get('/api/reports/expenses', { params: { days, page, limit } });
+    return response.data;
+  },
+};
+
+export const userService = {
+  getAll: async (): Promise<any[]> => {
+    const response = await api.get('/api/users');
+    return response.data;
+  },
+  create: async (data: { username: string; password: string; name: string; role: string }): Promise<any> => {
+    const response = await api.post('/api/users', data);
+    return response.data;
+  },
+  update: async (id: string, data: { name?: string; role?: string }): Promise<any> => {
+    const response = await api.put(`/api/users/${id}`, data);
+    return response.data;
+  },
+  resetPassword: async (id: string, password: string): Promise<void> => {
+    await api.patch(`/api/users/${id}/password`, { password });
+  },
+  delete: async (id: string): Promise<void> => {
+    await api.delete(`/api/users/${id}`);
+  },
+};
+
+export const expenseService = {
+  create: async (data: CreateExpenseDTO): Promise<Expense> => {
+    const response = await api.post('/api/expenses', data);
+    return response.data;
+  },
+
+  getAll: async (cashRegisterId?: string, page: number = 1, limit: number = 20): Promise<PaginatedResponse<Expense>> => {
+    const params: any = { page, limit };
+    if (cashRegisterId) params.cashRegisterId = cashRegisterId;
+    const response = await api.get('/api/expenses', { params });
+    return response.data;
+  },
+
+  delete: async (id: string): Promise<void> => {
+    await api.delete(`/api/expenses/${id}`);
   },
 };
 

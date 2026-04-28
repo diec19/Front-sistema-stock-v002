@@ -3,21 +3,21 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../src/context/AuthContext';
-import { Package, Lock, User } from 'lucide-react';
+import { Package, Lock, User, Eye, EyeOff } from 'lucide-react';
 
 export default function LoginPage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [showPass,  setShowPass]  = useState(false);
+  const [loading,  setLoading]  = useState(false);
+  const [error,    setError]    = useState('');
   const { login } = useAuth();
-  const router = useRouter();
+  const router    = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
-
     try {
       await login({ username, password });
       router.push('/');
@@ -29,84 +29,77 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center p-4">
+      <div className="w-full max-w-sm">
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl mb-4">
-            <Package className="w-10 h-10 text-white" />
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl mb-4 shadow-lg shadow-blue-200">
+            <Package className="w-8 h-8 text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-white mb-2">StockControl</h1>
-          <p className="text-slate-400">Sistema de Gestión de Inventario</p>
+          <h1 className="text-2xl font-bold text-gray-900">StockControl</h1>
+          <p className="text-gray-500 text-sm mt-1">Sistema de Gestión de Inventario</p>
         </div>
 
-        {/* Login Card */}
-        <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl border border-slate-700 p-8 shadow-2xl">
-          <h2 className="text-2xl font-bold text-white mb-6">Iniciar Sesión</h2>
+        {/* Card */}
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-xl shadow-gray-100 p-8">
+          <h2 className="text-xl font-bold text-gray-900 mb-6">Iniciar sesión</h2>
 
           {error && (
-            <div className="bg-red-500/10 border border-red-500 rounded-lg p-3 mb-6">
-              <p className="text-red-400 text-sm">{error}</p>
+            <div className="bg-red-50 border border-red-200 rounded-xl p-3 mb-5">
+              <p className="text-red-600 text-sm">{error}</p>
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             <div>
-              <label className="block text-slate-300 text-sm font-medium mb-2">
-                Usuario
-              </label>
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5">Usuario</label>
               <div className="relative">
-                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <input
                   type="text"
                   value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg pl-10 pr-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Ingresa tu usuario"
+                  onChange={e => setUsername(e.target.value)}
+                  placeholder="Tu usuario"
                   required
+                  className="w-full bg-gray-50 border border-gray-300 rounded-xl pl-9 pr-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-colors"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-slate-300 text-sm font-medium mb-2">
-                Contraseña
-              </label>
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5">Contraseña</label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <input
-                  type="password"
+                  type={showPass ? 'text' : 'password'}
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg pl-10 pr-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Ingresa tu contraseña"
+                  onChange={e => setPassword(e.target.value)}
+                  placeholder="••••••••"
                   required
+                  className="w-full bg-gray-50 border border-gray-300 rounded-xl pl-9 pr-10 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 transition-colors"
                 />
+                <button type="button" onClick={() => setShowPass(s => !s)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors">
+                  {showPass ? <EyeOff size={14} /> : <Eye size={14} />}
+                </button>
               </div>
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="w-full bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white py-2.5 rounded-xl text-sm font-bold transition-all disabled:opacity-50 flex items-center justify-center gap-2 mt-1 shadow-md shadow-blue-200"
             >
-              {loading ? (
-                <>
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  Iniciando sesión...
-                </>
-              ) : (
-                'Iniciar Sesión'
-              )}
+              {loading
+                ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Ingresando...</>
+                : 'Ingresar'}
             </button>
           </form>
 
-          {/* Demo credentials */}
-          <div className="mt-6 pt-6 border-t border-slate-700">
-            <p className="text-slate-400 text-sm mb-2">Credenciales de prueba:</p>
-            <div className="space-y-1 text-xs text-slate-500">
-              <p>👤 Admin: <span className="text-slate-300">admin / admin123</span></p>
-              <p>👤 Cajero: <span className="text-slate-300">cajero / cajero123</span></p>
+          <div className="mt-6 pt-5 border-t border-gray-100">
+            <p className="text-gray-400 text-xs mb-2 font-medium">Credenciales de prueba</p>
+            <div className="flex flex-col gap-1 text-xs text-gray-500">
+              <p>Admin: <span className="text-gray-700 font-semibold">admin / admin123</span></p>
+              <p>Cajero: <span className="text-gray-700 font-semibold">cajero / cajero123</span></p>
             </div>
           </div>
         </div>

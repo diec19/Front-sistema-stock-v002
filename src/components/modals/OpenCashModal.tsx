@@ -10,13 +10,19 @@ interface Props {
   onClose: () => void;
 }
 
+const sanitizeAmount = (raw: string) =>
+  raw.replace(',', '.').replace(/[^0-9.]/g, '');
+
 export default function OpenCashModal({
   cashierName, openingAmount, onChangeCashier, onChangeAmount, onConfirm, onClose,
 }: Props) {
+  const amount  = parseFloat(openingAmount);
+  const invalid = openingAmount !== '' && (isNaN(amount) || amount < 0 || amount > 9_999_999.99);
+
   return (
     <Modal
       title="Abrir caja"
-      icon={<LogIn size={17} className="text-emerald-400" />}
+      icon={<LogIn size={17} className="text-emerald-600" />}
       onClose={onClose}
     >
       <ModalField label="Nombre del cajero">
@@ -28,27 +34,32 @@ export default function OpenCashModal({
         />
       </ModalField>
 
-      <ModalField label="Monto inicial">
+      <ModalField label="Monto inicial ($)">
         <ModalInput
-          type="number"
-          step="0.01"
-          placeholder="0.00"
+          inputMode="decimal"
+          placeholder="0,00"
           value={openingAmount}
-          onChange={e => onChangeAmount(e.target.value)}
-          onKeyDown={e => e.key === 'Enter' && onConfirm()}
+          onChange={e => onChangeAmount(sanitizeAmount(e.target.value))}
+          onKeyDown={e => e.key === 'Enter' && !invalid && onConfirm()}
         />
+        {invalid && (
+          <p className="text-xs text-red-500 mt-1">
+            Ingresá un monto válido entre $0 y $9.999.999,99
+          </p>
+        )}
       </ModalField>
 
       <ModalActions>
         <button
           onClick={onClose}
-          className="px-4 py-2 text-sm font-medium rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-colors"
+          className="px-4 py-2 text-sm font-medium rounded-xl bg-white hover:bg-gray-50 text-gray-600 border border-gray-300 transition-colors"
         >
           Cancelar
         </button>
         <button
           onClick={onConfirm}
-          className="px-4 py-2 text-sm font-semibold rounded-lg bg-emerald-500 hover:bg-emerald-400 text-white transition-colors"
+          disabled={!cashierName.trim() || !openingAmount || invalid}
+          className="px-4 py-2 text-sm font-semibold rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Abrir caja
         </button>

@@ -1,4 +1,4 @@
-import { LogIn } from 'lucide-react';
+import { ShieldCheck } from 'lucide-react';
 import Modal, { ModalField, ModalInput, ModalActions } from './Modal';
 
 interface Props {
@@ -8,22 +8,20 @@ interface Props {
   onChangePassword: (v: string) => void;
   onConfirm: () => void;
   onClose: () => void;
-   title?: string;
+  title?: string;
   message?: string;
 }
 
 export default function AuthModal({
-  username, password, onChangeUsername, onChangePassword, onConfirm, onClose,title,message
+  username, password, onChangeUsername, onChangePassword, onConfirm, onClose, title, message,
 }: Props) {
   return (
     <Modal
-      title="Acceso de administrador"
-      icon={<LogIn size={17} className="text-sky-400" />}
+      title={title ?? 'Acceso de administrador'}
+      icon={<ShieldCheck size={17} className="text-violet-500" />}
       onClose={onClose}
     >
-      <p className="text-sm text-slate-400">
-        Solo los administradores pueden ver el historial de ventas.
-      </p>
+      {message && <p className="text-sm text-gray-500 -mt-1">{message}</p>}
 
       <ModalField label="Usuario">
         <ModalInput
@@ -47,13 +45,14 @@ export default function AuthModal({
       <ModalActions>
         <button
           onClick={onClose}
-          className="px-4 py-2 text-sm font-medium rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-colors"
+          className="px-4 py-2 text-sm font-medium rounded-xl bg-white hover:bg-gray-50 text-gray-600 border border-gray-300 transition-colors"
         >
           Cancelar
         </button>
         <button
           onClick={onConfirm}
-          className="px-4 py-2 text-sm font-semibold rounded-lg bg-sky-500 hover:bg-sky-400 text-white transition-colors"
+          disabled={!username || !password}
+          className="px-4 py-2 text-sm font-semibold rounded-xl bg-violet-600 hover:bg-violet-700 text-white transition-colors disabled:opacity-50"
         >
           Ingresar
         </button>

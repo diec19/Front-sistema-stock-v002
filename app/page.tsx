@@ -5,7 +5,6 @@ import { Plus, Pencil, Trash2, Package, AlertCircle, Search, ChevronLeft, Chevro
 import { productService, importService } from '../src/services/api';
 import { Product, CreateProductDTO, ProductStats, PaginationInfo } from '../src/types/product';
 
-// Helper para formatear precio
 const formatPrice = (price: number | string): string => {
   const numPrice = typeof price === 'number' ? price : parseFloat(price.toString());
   return numPrice.toFixed(2);
@@ -45,7 +44,7 @@ export default function Home() {
 
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
-      setPagination(prev => ({ ...prev, page: 1 })); // Reset a página 1 al buscar
+      setPagination(prev => ({ ...prev, page: 1 }));
       loadProducts(1, searchTerm);
     }, 300);
 
@@ -136,14 +135,7 @@ export default function Home() {
       });
     } else {
       setEditingProduct(null);
-      setFormData({
-        name: '',
-        description: '',
-        sku: '',
-        price: 0,
-        stock: 0,
-        minStock: 0
-      });
+      setFormData({ name: '', description: '', sku: '', price: 0, stock: 0, minStock: 0 });
     }
     setIsModalOpen(true);
   };
@@ -187,8 +179,6 @@ export default function Home() {
       setImportLoading(true);
       const result = await importService.importProducts(selectedFile);
       setImportResult(result);
-      
-      // Si hay productos exitosos, recargar la lista
       if (result.results.success > 0) {
         await loadData();
       }
@@ -211,40 +201,43 @@ export default function Home() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-white text-xl">Cargando...</div>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="flex flex-col items-center gap-3 text-gray-500">
+          <div className="w-8 h-8 border-2 border-gray-200 border-t-blue-500 rounded-full animate-spin" />
+          <span className="text-sm font-medium">Cargando…</span>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto p-6">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-3">
-              <div className="bg-blue-500 p-3 rounded-xl">
-                <Package className="w-8 h-8 text-white" />
+              <div className="bg-blue-500 p-3 rounded-xl shadow-md shadow-blue-200">
+                <Package className="w-7 h-7 text-white" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-white">Control de Stock</h1>
-                <p className="text-slate-400">Gestión de inventario en tiempo real</p>
+                <h1 className="text-2xl font-bold text-gray-900">Control de Stock</h1>
+                <p className="text-sm text-gray-500">Gestión de inventario en tiempo real</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
               <button
                 onClick={() => setIsImportModalOpen(true)}
-                className="flex items-center gap-2 bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-xl font-semibold transition-all shadow-lg hover:shadow-green-500/50"
+                className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-5 py-2.5 rounded-xl font-semibold transition-all shadow-md shadow-emerald-200 text-sm"
               >
-                <Upload className="w-5 h-5" />
+                <Upload className="w-4 h-4" />
                 Importar Excel
               </button>
               <button
                 onClick={() => openModal()}
-                className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-xl font-semibold transition-all shadow-lg hover:shadow-blue-500/50"
+                className="flex items-center gap-2 bg-blue-500 hover:bg-blue-600 text-white px-5 py-2.5 rounded-xl font-semibold transition-all shadow-md shadow-blue-200 text-sm"
               >
-                <Plus className="w-5 h-5" />
+                <Plus className="w-4 h-4" />
                 Nuevo Producto
               </button>
             </div>
@@ -252,30 +245,30 @@ export default function Home() {
 
           {/* Stats */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div className="bg-slate-800/50 backdrop-blur-sm p-6 rounded-xl border border-slate-700">
-              <div className="text-slate-400 text-sm mb-1">Total Productos</div>
-              <div className="text-3xl font-bold text-white">{stats.totalProducts}</div>
+            <div className="bg-white border border-gray-200 p-5 rounded-xl shadow-sm">
+              <div className="text-gray-500 text-xs font-semibold uppercase tracking-wide mb-1">Total Productos</div>
+              <div className="text-3xl font-bold text-gray-900">{stats.totalProducts}</div>
             </div>
-            <div className="bg-slate-800/50 backdrop-blur-sm p-6 rounded-xl border border-slate-700">
-              <div className="text-slate-400 text-sm mb-1">Valor Total</div>
-              <div className="text-3xl font-bold text-green-400">
+            <div className="bg-white border border-gray-200 p-5 rounded-xl shadow-sm">
+              <div className="text-gray-500 text-xs font-semibold uppercase tracking-wide mb-1">Valor Total</div>
+              <div className="text-3xl font-bold text-emerald-600">
                 ${stats.totalValue.toFixed(2)}
               </div>
             </div>
-            <div className="bg-slate-800/50 backdrop-blur-sm p-6 rounded-xl border border-slate-700">
-              <div className="text-slate-400 text-sm mb-1">Stock Bajo</div>
-              <div className="text-3xl font-bold text-red-400">{stats.lowStockCount}</div>
+            <div className="bg-white border border-gray-200 p-5 rounded-xl shadow-sm">
+              <div className="text-gray-500 text-xs font-semibold uppercase tracking-wide mb-1">Stock Bajo</div>
+              <div className="text-3xl font-bold text-red-500">{stats.lowStockCount}</div>
             </div>
           </div>
 
           {/* Alerts */}
           {lowStockProducts.length > 0 && (
-            <div className="bg-red-500/10 border border-red-500/50 rounded-xl p-4 mb-6">
+            <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
               <div className="flex items-start gap-3">
-                <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+                <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
                 <div>
-                  <h3 className="text-red-400 font-semibold mb-1">Productos con stock bajo</h3>
-                  <div className="text-slate-300 text-sm">
+                  <h3 className="text-red-600 font-semibold mb-1 text-sm">Productos con stock bajo</h3>
+                  <div className="text-gray-700 text-sm">
                     {lowStockProducts.map(p => p.name).join(', ')}
                   </div>
                 </div>
@@ -285,58 +278,58 @@ export default function Home() {
 
           {/* Search */}
           <div className="relative">
-            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
+            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
             <input
               type="text"
               placeholder="Buscar por nombre o SKU..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-slate-800/50 border border-slate-700 rounded-xl pl-12 pr-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full bg-white border border-gray-300 rounded-xl pl-11 pr-4 py-2.5 text-gray-900 placeholder-gray-400 text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
             />
           </div>
         </div>
 
         {/* Products Table */}
-        <div className="bg-slate-800/50 backdrop-blur-sm rounded-xl border border-slate-700 overflow-hidden">
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="bg-slate-800/80">
-                  <th className="text-left px-6 py-4 text-slate-300 font-semibold">SKU</th>
-                  <th className="text-left px-6 py-4 text-slate-300 font-semibold">Producto</th>
-                  <th className="text-left px-6 py-4 text-slate-300 font-semibold">Precio</th>
-                  <th className="text-left px-6 py-4 text-slate-300 font-semibold">Stock</th>
-                  <th className="text-left px-6 py-4 text-slate-300 font-semibold">Estado</th>
-                  <th className="text-left px-6 py-4 text-slate-300 font-semibold">Acciones</th>
+                <tr className="bg-gray-50 border-b border-gray-200">
+                  <th className="text-left px-6 py-3.5 text-[11px] font-semibold text-gray-500 uppercase tracking-wide">SKU</th>
+                  <th className="text-left px-6 py-3.5 text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Producto</th>
+                  <th className="text-left px-6 py-3.5 text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Precio</th>
+                  <th className="text-left px-6 py-3.5 text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Stock</th>
+                  <th className="text-left px-6 py-3.5 text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Estado</th>
+                  <th className="text-left px-6 py-3.5 text-[11px] font-semibold text-gray-500 uppercase tracking-wide">Acciones</th>
                 </tr>
               </thead>
               <tbody>
                 {products.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="text-center py-12 text-slate-400">
+                    <td colSpan={6} className="text-center py-12 text-gray-400 text-sm">
                       {searchTerm ? 'No se encontraron productos' : 'No hay productos registrados'}
                     </td>
                   </tr>
                 ) : (
                   products.map((product) => (
-                    <tr key={product.id} className="border-t border-slate-700 hover:bg-slate-700/30 transition-colors">
-                      <td className="px-6 py-4 text-slate-300 font-mono text-sm">{product.sku}</td>
+                    <tr key={product.id} className="border-t border-gray-100 hover:bg-gray-50 transition-colors">
+                      <td className="px-6 py-4 text-gray-500 font-mono text-sm">{product.sku}</td>
                       <td className="px-6 py-4">
-                        <div className="text-white font-medium">{product.name}</div>
-                        <div className="text-slate-400 text-sm">{product.description}</div>
+                        <div className="text-gray-900 font-medium text-sm">{product.name}</div>
+                        <div className="text-gray-400 text-xs">{product.description}</div>
                       </td>
-                      <td className="px-6 py-4 text-green-400 font-semibold">${formatPrice(product.price)}</td>
+                      <td className="px-6 py-4 text-emerald-600 font-semibold text-sm">${formatPrice(product.price)}</td>
                       <td className="px-6 py-4">
-                        <div className="text-white font-semibold">{product.stock}</div>
-                        <div className="text-slate-400 text-xs">Mín: {product.minStock}</div>
+                        <div className="text-gray-900 font-semibold text-sm">{product.stock}</div>
+                        <div className="text-gray-400 text-xs">Mín: {product.minStock}</div>
                       </td>
                       <td className="px-6 py-4">
                         {product.stock <= product.minStock ? (
-                          <span className="px-3 py-1 bg-red-500/20 text-red-400 rounded-full text-xs font-semibold">
+                          <span className="px-2.5 py-1 bg-red-100 text-red-600 border border-red-200 rounded-full text-xs font-semibold">
                             Bajo
                           </span>
                         ) : (
-                          <span className="px-3 py-1 bg-green-500/20 text-green-400 rounded-full text-xs font-semibold">
+                          <span className="px-2.5 py-1 bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-full text-xs font-semibold">
                             Normal
                           </span>
                         )}
@@ -345,13 +338,13 @@ export default function Home() {
                         <div className="flex gap-2">
                           <button
                             onClick={() => openModal(product)}
-                            className="p-2 bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 rounded-lg transition-colors"
+                            className="p-2 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg transition-colors border border-blue-100"
                           >
                             <Pencil className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => deleteProduct(product.id)}
-                            className="p-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-lg transition-colors"
+                            className="p-2 bg-red-50 hover:bg-red-100 text-red-500 rounded-lg transition-colors border border-red-100"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -366,23 +359,21 @@ export default function Home() {
 
           {/* Paginación */}
           {pagination.totalPages > 1 && (
-            <div className="px-6 py-4 border-t border-slate-700 flex items-center justify-between">
-              <div className="text-slate-400 text-sm">
+            <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between bg-gray-50">
+              <div className="text-gray-500 text-sm">
                 Mostrando {((pagination.page - 1) * pagination.limit) + 1} - {Math.min(pagination.page * pagination.limit, pagination.total)} de {pagination.total} productos
               </div>
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setPagination(prev => ({ ...prev, page: prev.page - 1 }))}
                   disabled={pagination.page === 1}
-                  className="p-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="p-2 bg-white hover:bg-gray-100 text-gray-700 rounded-lg border border-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <ChevronLeft className="w-5 h-5" />
+                  <ChevronLeft className="w-4 h-4" />
                 </button>
-                
-                {/* Números de página */}
+
                 <div className="flex gap-1">
                   {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map((pageNum) => {
-                    // Mostrar solo páginas cercanas
                     if (
                       pageNum === 1 ||
                       pageNum === pagination.totalPages ||
@@ -392,10 +383,10 @@ export default function Home() {
                         <button
                           key={pageNum}
                           onClick={() => setPagination(prev => ({ ...prev, page: pageNum }))}
-                          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                          className={`px-3.5 py-2 rounded-lg font-medium text-sm transition-colors ${
                             pagination.page === pageNum
                               ? 'bg-blue-500 text-white'
-                              : 'bg-slate-700 hover:bg-slate-600 text-slate-300'
+                              : 'bg-white hover:bg-gray-100 text-gray-700 border border-gray-200'
                           }`}
                         >
                           {pageNum}
@@ -405,7 +396,7 @@ export default function Home() {
                       pageNum === pagination.page - 2 ||
                       pageNum === pagination.page + 2
                     ) {
-                      return <span key={pageNum} className="px-2 text-slate-500">...</span>;
+                      return <span key={pageNum} className="px-2 text-gray-400 self-center">...</span>;
                     }
                     return null;
                   })}
@@ -414,101 +405,104 @@ export default function Home() {
                 <button
                   onClick={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}
                   disabled={pagination.page === pagination.totalPages}
-                  className="p-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="p-2 bg-white hover:bg-gray-100 text-gray-700 rounded-lg border border-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <ChevronRight className="w-5 h-5" />
+                  <ChevronRight className="w-4 h-4" />
                 </button>
               </div>
             </div>
           )}
         </div>
 
-        {/* Modal */}
+        {/* Modal Producto */}
         {isModalOpen && (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-            <div className="bg-slate-800 rounded-2xl max-w-2xl w-full border border-slate-700 shadow-2xl">
-              <div className="p-6 border-b border-slate-700">
-                <h2 className="text-2xl font-bold text-white">
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-2xl max-w-2xl w-full border border-gray-200 shadow-2xl shadow-gray-300/40">
+              <div className="p-6 border-b border-gray-100 flex items-center justify-between">
+                <h2 className="text-xl font-bold text-gray-900">
                   {editingProduct ? 'Editar Producto' : 'Nuevo Producto'}
                 </h2>
+                <button onClick={closeModal} className="text-gray-400 hover:text-gray-600 transition-colors">
+                  <X className="w-5 h-5" />
+                </button>
               </div>
               <div className="p-6 space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-slate-300 text-sm font-medium mb-2">Nombre</label>
+                    <label className="block text-gray-700 text-sm font-medium mb-1.5">Nombre</label>
                     <input
                       type="text"
                       value={formData.name}
                       onChange={(e) => setFormData({...formData, name: e.target.value})}
-                      className="w-full bg-slate-900 border border-slate-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 text-gray-900 text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                       placeholder="Nombre del producto"
                     />
                   </div>
                   <div>
-                    <label className="block text-slate-300 text-sm font-medium mb-2">SKU</label>
+                    <label className="block text-gray-700 text-sm font-medium mb-1.5">SKU</label>
                     <input
                       type="text"
                       value={formData.sku}
                       onChange={(e) => setFormData({...formData, sku: e.target.value})}
-                      className="w-full bg-slate-900 border border-slate-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 text-gray-900 text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                       placeholder="SKU-001"
                     />
                   </div>
                 </div>
                 <div>
-                  <label className="block text-slate-300 text-sm font-medium mb-2">Descripción</label>
+                  <label className="block text-gray-700 text-sm font-medium mb-1.5">Descripción</label>
                   <textarea
                     value={formData.description}
                     onChange={(e) => setFormData({...formData, description: e.target.value})}
-                    className="w-full bg-slate-900 border border-slate-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 text-gray-900 text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                     placeholder="Descripción del producto"
                     rows={3}
                   />
                 </div>
                 <div className="grid grid-cols-3 gap-4">
                   <div>
-                    <label className="block text-slate-300 text-sm font-medium mb-2">Precio</label>
+                    <label className="block text-gray-700 text-sm font-medium mb-1.5">Precio</label>
                     <input
                       type="number"
                       step="0.01"
                       value={formData.price || ''}
                       onChange={(e) => setFormData({...formData, price: e.target.value ? parseFloat(e.target.value) : 0})}
-                      className="w-full bg-slate-900 border border-slate-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 text-gray-900 text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                       placeholder="0.00"
                     />
                   </div>
                   <div>
-                    <label className="block text-slate-300 text-sm font-medium mb-2">Stock</label>
+                    <label className="block text-gray-700 text-sm font-medium mb-1.5">Stock</label>
                     <input
                       type="number"
                       value={formData.stock || ''}
                       onChange={(e) => setFormData({...formData, stock: e.target.value ? parseInt(e.target.value) : 0})}
-                      className="w-full bg-slate-900 border border-slate-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 text-gray-900 text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                       placeholder="0"
                     />
                   </div>
                   <div>
-                    <label className="block text-slate-300 text-sm font-medium mb-2">Stock Mínimo</label>
+                    <label className="block text-gray-700 text-sm font-medium mb-1.5">Stock Mínimo</label>
                     <input
                       type="number"
                       value={formData.minStock || ''}
                       onChange={(e) => setFormData({...formData, minStock: e.target.value ? parseInt(e.target.value) : 0})}
-                      className="w-full bg-slate-900 border border-slate-600 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full bg-gray-50 border border-gray-300 rounded-xl px-4 py-2.5 text-gray-900 text-sm focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
                       placeholder="0"
                     />
                   </div>
                 </div>
               </div>
-              <div className="p-6 border-t border-slate-700 flex gap-3 justify-end">
+              <div className="p-6 border-t border-gray-100 flex gap-3 justify-end">
                 <button
                   onClick={closeModal}
-                  className="px-6 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors"
+                  className="px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-sm font-medium transition-colors"
                 >
                   Cancelar
                 </button>
                 <button
                   onClick={saveProduct}
-                  className="px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-semibold transition-colors"
+                  className="px-5 py-2.5 bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-sm font-semibold transition-colors shadow-md shadow-blue-200"
                 >
                   {editingProduct ? 'Actualizar' : 'Crear'}
                 </button>
@@ -516,152 +510,149 @@ export default function Home() {
             </div>
           </div>
         )}
-      </div>
 
-      {/* Modal de Importación */}
-      {isImportModalOpen && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-slate-800 rounded-2xl max-w-3xl w-full border border-slate-700 shadow-2xl">
-            <div className="p-6 border-b border-slate-700 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="bg-green-500 p-2 rounded-lg">
-                  <FileSpreadsheet className="w-6 h-6 text-white" />
+        {/* Modal Importación */}
+        {isImportModalOpen && (
+          <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-2xl max-w-3xl w-full border border-gray-200 shadow-2xl shadow-gray-300/40">
+              <div className="p-6 border-b border-gray-100 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="bg-emerald-500 p-2 rounded-lg shadow-md shadow-emerald-200">
+                    <FileSpreadsheet className="w-5 h-5 text-white" />
+                  </div>
+                  <h2 className="text-xl font-bold text-gray-900">Importar Productos desde Excel</h2>
                 </div>
-                <h2 className="text-2xl font-bold text-white">Importar Productos desde Excel</h2>
-              </div>
-              <button
-                onClick={closeImportModal}
-                className="text-slate-400 hover:text-white transition-colors"
-              >
-                <X className="w-6 h-6" />
-              </button>
-            </div>
-
-            <div className="p-6 space-y-6">
-              {/* Instrucciones */}
-              <div className="bg-blue-500/10 border border-blue-500/50 rounded-xl p-4">
-                <h3 className="text-blue-400 font-semibold mb-2">📋 Instrucciones:</h3>
-                <ol className="text-slate-300 text-sm space-y-1 list-decimal list-inside">
-                  <li>Descarga la plantilla Excel</li>
-                  <li>Completa los datos de los productos (nombre, descripción, sku, precio, stock, stock_minimo)</li>
-                  <li>Guarda el archivo y súbelo aquí</li>
-                </ol>
-              </div>
-
-              {/* Botón descargar plantilla */}
-              <div>
                 <button
-                  onClick={handleDownloadTemplate}
-                  className="w-full flex items-center justify-center gap-2 bg-slate-700 hover:bg-slate-600 text-white px-6 py-3 rounded-xl font-semibold transition-colors"
+                  onClick={closeImportModal}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
                 >
-                  <Download className="w-5 h-5" />
-                  Descargar Plantilla Excel
+                  <X className="w-5 h-5" />
                 </button>
               </div>
 
-              {/* Área de carga de archivo */}
-              <div className="border-2 border-dashed border-slate-600 rounded-xl p-8 text-center">
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".xlsx,.xls"
-                  onChange={handleFileSelect}
-                  className="hidden"
-                  id="file-upload"
-                />
-                <label
-                  htmlFor="file-upload"
-                  className="cursor-pointer flex flex-col items-center gap-3"
+              <div className="p-6 space-y-5">
+                {/* Instrucciones */}
+                <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                  <h3 className="text-blue-700 font-semibold mb-2 text-sm">Instrucciones:</h3>
+                  <ol className="text-gray-700 text-sm space-y-1 list-decimal list-inside">
+                    <li>Descargá la plantilla Excel</li>
+                    <li>Completá los datos de los productos (nombre, descripción, sku, precio, stock, stock_minimo)</li>
+                    <li>Guardá el archivo y subilo aquí</li>
+                  </ol>
+                </div>
+
+                {/* Botón descargar plantilla */}
+                <button
+                  onClick={handleDownloadTemplate}
+                  className="w-full flex items-center justify-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 border border-gray-200 px-5 py-2.5 rounded-xl font-semibold transition-colors text-sm"
                 >
-                  <div className="bg-slate-700 p-4 rounded-full">
-                    <Upload className="w-8 h-8 text-slate-300" />
+                  <Download className="w-4 h-4" />
+                  Descargar Plantilla Excel
+                </button>
+
+                {/* Área de carga */}
+                <div className="border-2 border-dashed border-gray-300 hover:border-gray-400 rounded-xl p-8 text-center transition-colors">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".xlsx,.xls"
+                    onChange={handleFileSelect}
+                    className="hidden"
+                    id="file-upload"
+                  />
+                  <label
+                    htmlFor="file-upload"
+                    className="cursor-pointer flex flex-col items-center gap-3"
+                  >
+                    <div className="bg-gray-100 p-4 rounded-full">
+                      <Upload className="w-7 h-7 text-gray-400" />
+                    </div>
+                    <div>
+                      <p className="text-gray-900 font-medium mb-1 text-sm">
+                        {selectedFile ? selectedFile.name : 'Click para seleccionar archivo'}
+                      </p>
+                      <p className="text-gray-400 text-xs">
+                        o arrastrá y soltá tu archivo Excel aquí
+                      </p>
+                    </div>
+                  </label>
+                </div>
+
+                {/* Resultado de la importación */}
+                {importResult && (
+                  <div className="space-y-4">
+                    <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
+                      <h3 className="text-gray-900 font-semibold mb-3 text-sm">Resultado de la Importación</h3>
+                      <div className="grid grid-cols-3 gap-3 mb-4">
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                          <div className="text-blue-600 text-xs font-semibold mb-0.5">Total</div>
+                          <div className="text-2xl font-bold text-gray-900">{importResult.results.total}</div>
+                        </div>
+                        <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3">
+                          <div className="text-emerald-600 text-xs font-semibold flex items-center gap-1 mb-0.5">
+                            <CheckCircle className="w-3.5 h-3.5" />
+                            Exitosos
+                          </div>
+                          <div className="text-2xl font-bold text-gray-900">{importResult.results.success}</div>
+                        </div>
+                        <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                          <div className="text-red-500 text-xs font-semibold flex items-center gap-1 mb-0.5">
+                            <XCircle className="w-3.5 h-3.5" />
+                            Errores
+                          </div>
+                          <div className="text-2xl font-bold text-gray-900">{importResult.results.errors}</div>
+                        </div>
+                      </div>
+
+                      {importResult.results.errorDetails.length > 0 && (
+                        <div className="mt-3">
+                          <h4 className="text-red-500 font-medium text-sm mb-2">Errores encontrados:</h4>
+                          <div className="bg-white border border-gray-200 rounded-lg p-3 max-h-60 overflow-y-auto">
+                            {importResult.results.errorDetails.map((error: any, index: number) => (
+                              <div key={index} className="text-sm text-gray-700 mb-2 pb-2 border-b border-gray-100 last:border-0">
+                                <span className="text-red-500 font-medium">Fila {error.row}:</span> {error.error}
+                                <div className="text-gray-400 text-xs mt-1">
+                                  SKU: {error.data.sku} - {error.data.nombre}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-white font-medium mb-1">
-                      {selectedFile ? selectedFile.name : 'Click para seleccionar archivo'}
-                    </p>
-                    <p className="text-slate-400 text-sm">
-                      o arrastra y suelta tu archivo Excel aquí
-                    </p>
-                  </div>
-                </label>
+                )}
               </div>
 
-              {/* Resultado de la importación */}
-              {importResult && (
-                <div className="space-y-4">
-                  <div className="bg-slate-700/50 rounded-xl p-4">
-                    <h3 className="text-white font-semibold mb-3">Resultado de la Importación</h3>
-                    <div className="grid grid-cols-3 gap-4 mb-4">
-                      <div className="bg-blue-500/20 rounded-lg p-3">
-                        <div className="text-blue-400 text-sm">Total</div>
-                        <div className="text-2xl font-bold text-white">{importResult.results.total}</div>
-                      </div>
-                      <div className="bg-green-500/20 rounded-lg p-3">
-                        <div className="text-green-400 text-sm flex items-center gap-1">
-                          <CheckCircle className="w-4 h-4" />
-                          Exitosos
-                        </div>
-                        <div className="text-2xl font-bold text-white">{importResult.results.success}</div>
-                      </div>
-                      <div className="bg-red-500/20 rounded-lg p-3">
-                        <div className="text-red-400 text-sm flex items-center gap-1">
-                          <XCircle className="w-4 h-4" />
-                          Errores
-                        </div>
-                        <div className="text-2xl font-bold text-white">{importResult.results.errors}</div>
-                      </div>
-                    </div>
-
-                    {/* Lista de errores */}
-                    {importResult.results.errorDetails.length > 0 && (
-                      <div className="mt-4">
-                        <h4 className="text-red-400 font-medium mb-2">Errores encontrados:</h4>
-                        <div className="bg-slate-900 rounded-lg p-3 max-h-60 overflow-y-auto">
-                          {importResult.results.errorDetails.map((error: any, index: number) => (
-                            <div key={index} className="text-sm text-slate-300 mb-2 pb-2 border-b border-slate-700 last:border-0">
-                              <span className="text-red-400 font-medium">Fila {error.row}:</span> {error.error}
-                              <div className="text-slate-500 text-xs mt-1">
-                                SKU: {error.data.sku} - {error.data.nombre}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="p-6 border-t border-slate-700 flex gap-3 justify-end">
-              <button
-                onClick={closeImportModal}
-                className="px-6 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors"
-              >
-                Cerrar
-              </button>
-              <button
-                onClick={handleImport}
-                disabled={!selectedFile || importLoading}
-                className="px-6 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-              >
-                {importLoading ? (
-                  <>
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    Importando...
-                  </>
-                ) : (
-                  <>
-                    <Upload className="w-5 h-5" />
-                    Importar Productos
-                  </>
-                )}
-              </button>
+              <div className="p-6 border-t border-gray-100 flex gap-3 justify-end">
+                <button
+                  onClick={closeImportModal}
+                  className="px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-sm font-medium transition-colors"
+                >
+                  Cerrar
+                </button>
+                <button
+                  onClick={handleImport}
+                  disabled={!selectedFile || importLoading}
+                  className="px-5 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-sm font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-md shadow-emerald-200"
+                >
+                  {importLoading ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      Importando...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="w-4 h-4" />
+                      Importar Productos
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
